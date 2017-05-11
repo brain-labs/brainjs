@@ -1,6 +1,7 @@
-BF = (function (){
+Brain = (function (){
 /************************ Utils *************************/
-  var Token = function (type, value, number) {
+
+  /*var Token = function (type, value, number) {
     this.type = type;
     this.value = value;
     this.number = number;
@@ -11,9 +12,29 @@ BF = (function (){
     var msg = "Data pointer out of range.";
     if (RangeError) return new RangeError(msg);
     return new Error(msg);
+  })();*/
+
+/************************ AST *************************/
+
+  var Expr = (function() {
+    var Expr = function() {};
+    Expr.prototype = {
+      update_expression : function(update) { return false; },
+      should_update : function() { return true; }
+    }
+    return Expr;
   })();
 
-  var MAX_DATA_COUNT = 30000;
+  var IncrementExpr = (function() {
+    var IncrementExpr = function(increment) {
+      this.increment = increment;
+    };
+
+    IncrementExpr.prototype = Object.create(Expr.prototype);
+    IncrementExpr.prototype.should_update = function() {return false};
+
+    return IncrementExpr;
+  })();
 
 /************************ Parser *************************/
   // Class: Parser @arg (String) program code
@@ -22,7 +43,7 @@ BF = (function (){
     var tokenized = [],
         i = 0,
         ch, token, match_stack, prev;
-    var tokens = {
+    /*var tokens = {
       '>': 'increment_pointer',
       '<': 'decrement_pointer',
       '+': 'increment_data',
@@ -31,8 +52,29 @@ BF = (function (){
       ',': 'input',
       '[': 'jump_forward_if_zero',
       ']': 'jump_backward_if_nonzero'
+    };*/
+    var tokens = {
+      '<' : 'TT_SHIFT_LEFT',
+      '>' : 'TT_SHIFT_RIGHT',
+      '^' : 'TT_SHIFT_JUMP',
+      '+' : 'TT_INCREMENT',
+      '-' : 'TT_DECREMENT',
+      '.' : 'TT_OUTPUT',
+      ',' : 'TT_INPUT',
+      '[' : 'TT_BEGIN_WHILE',
+      ']' : 'TT_END_WHILE',
+      '{' : 'TT_BEGIN_FOR',
+      '}' : 'TT_END_FOR',
+      '*' : 'TT_MUL',
+      '/' : 'TT_DIV',
+      '%' : 'TT_REM',
+      '#' : 'TT_DEBUG',
+      '!' : 'TT_BREAK',
+      '?' : 'TT_IF_THEN',
+      ':' : 'TT_IF_ELSE',
+      ';' : 'TT_IF_END',
+      '$' : 'TT_FLOAT'
     };
-
 
     match_stack = [];
     code = code.split('');
@@ -99,7 +141,6 @@ BF = (function (){
       },
 
       increment_pointer: function () {
-        if (this.d_ptr === MAX_DATA_COUNT - 1) throw ErrOutOfRange;
         this.d_ptr++;
       },
 
@@ -151,6 +192,7 @@ BF = (function (){
 
   return {
     Parser: Parser,
-    Interpreter: Interpreter
+    Interpreter: Interpreter,
+    Expr: IncrementExpr
   };
 })();
