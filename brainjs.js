@@ -1,18 +1,6 @@
 Brain = (function (){
 /************************ Utils *************************/
 
-  /*var Token = function (type, value, number) {
-    this.type = type;
-    this.value = value;
-    this.number = number;
-    this.toString = function () {return value};
-  };
-
-  var ErrOutOfRange = (function () {
-    var msg = "Data pointer out of range.";
-    if (RangeError) return new RangeError(msg);
-    return new Error(msg);
-  })();*/
 
 /************************ AST *************************/
 
@@ -20,10 +8,44 @@ Brain = (function (){
     var Expr = function() {};
     Expr.prototype = {
       update_expression : function(update) { return false; },
-      should_update : function() { return true; },
+      should_update : function() { return false; },
       value : function() { }
     }
     return Expr;
+  })();
+
+  var FloatExpr = (function() {
+    var FloatExpr = function(){ };
+    FloatExpr.prototype = Object.create(Expr.prototype);
+    return FloatExpr;
+  })();
+
+  var BreakExpr = (function() {
+    var BreakExpr = function(){ };
+    BreakExpr.prototype = Object.create(Expr.prototype);
+    return BreakExpr;
+  })();
+
+  var DebugExpr = (function() {
+    var DebugExpr = function(){ };
+    DebugExpr.prototype = Object.create(Expr.prototype);
+    return DebugExpr;
+  })();
+
+  var ArithmeticExpr = (function() {
+    var ArithmeticExpr = function(type) {
+      this.type = 'undefined';
+
+      if (type === 'TT_MUL'
+       || type === 'TT_REM'
+       || type === 'TT_DIV') {
+        this.type = type;
+      }
+    };
+
+    ArithmeticExpr.prototype = Object.create(Expr.prototype);
+    ArithmeticExpr.prototype.value = function(){ return this.type; };
+    return ArithmeticExpr;
   })();
 
   var IncrementExpr = (function() {
@@ -33,6 +55,7 @@ Brain = (function (){
 
     IncrementExpr.prototype = Object.create(Expr.prototype);
     IncrementExpr.prototype.value = function(){ return this.increment; };
+    IncrementExpr.prototype.should_update = function(){ return true; }
     IncrementExpr.prototype.update_expression = function(update) {
       if (update === 'TT_INCREMENT') {
         this.increment++;
@@ -46,6 +69,19 @@ Brain = (function (){
     };
 
     return IncrementExpr;
+  })();
+
+  var IfExpr = (function() {
+    var IfExpr = function(exprs_then) {
+      this.exprs_then = exprs_then;
+    };
+
+    IfExpr.prototype = Object.create(Expr.prototype);
+    IfExpr.prototype.set_else = function(exprs_else) {
+      this.exprs_else = exprs_else;
+    };
+
+    return IfExpr;
   })();
 
 /************************ Parser *************************/
@@ -205,6 +241,6 @@ Brain = (function (){
   return {
     Parser: Parser,
     Interpreter: Interpreter,
-    Expr: IncrementExpr
+    Expr: IfExpr
   };
 })();
