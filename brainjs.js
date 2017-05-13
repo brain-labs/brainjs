@@ -20,7 +20,8 @@ Brain = (function (){
     var Expr = function() {};
     Expr.prototype = {
       update_expression : function(update) { return false; },
-      should_update : function() { return true; }
+      should_update : function() { return true; },
+      value : function() { }
     }
     return Expr;
   })();
@@ -31,7 +32,18 @@ Brain = (function (){
     };
 
     IncrementExpr.prototype = Object.create(Expr.prototype);
-    IncrementExpr.prototype.should_update = function() {return false};
+    IncrementExpr.prototype.value = function(){ return this.increment; };
+    IncrementExpr.prototype.update_expression = function(update) {
+      if (update === 'TT_INCREMENT') {
+        this.increment++;
+        return true;
+      } else if (update === 'TT_DECREMENT') {
+        this.increment--;
+        return true;
+      }
+
+      return false;
+    };
 
     return IncrementExpr;
   })();
