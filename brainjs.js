@@ -8,8 +8,7 @@ Brain = (function (){
     var Expr = function() {};
     Expr.prototype = {
       update_expression : function(update) { return false; },
-      should_update : function() { return false; },
-      value : function() { }
+      value : function() { return this; }
     }
     return Expr;
   })();
@@ -32,6 +31,32 @@ Brain = (function (){
     return DebugExpr;
   })();
 
+  var InputExpr = (function() {
+    var InputExpr = function(){ };
+    InputExpr.prototype = Object.create(Expr.prototype);
+    return InputExpr;
+  })();
+
+  var OutputExpr = (function() {
+    var OutputExpr = function(){ };
+    OutputExpr.prototype = Object.create(Expr.prototype);
+    return OutputExpr;
+  })();
+
+  var LoopExpr = (function() {
+    var LoopExpr = function(type) {
+      this.type = 'undefined';
+
+      if (type === 'TT_BEGIN_WHILE'
+       || type === 'TT_BEGIN_FOR') {
+        this.type = type;
+      }
+    };
+
+    LoopExpr.prototype = Object.create(Expr.prototype);
+    return LoopExpr;
+  })();
+
   var ArithmeticExpr = (function() {
     var ArithmeticExpr = function(type) {
       this.type = 'undefined';
@@ -44,7 +69,6 @@ Brain = (function (){
     };
 
     ArithmeticExpr.prototype = Object.create(Expr.prototype);
-    ArithmeticExpr.prototype.value = function(){ return this.type; };
     return ArithmeticExpr;
   })();
 
@@ -54,8 +78,6 @@ Brain = (function (){
     };
 
     IncrementExpr.prototype = Object.create(Expr.prototype);
-    IncrementExpr.prototype.value = function(){ return this.increment; };
-    IncrementExpr.prototype.should_update = function(){ return true; }
     IncrementExpr.prototype.update_expression = function(update) {
       if (update === 'TT_INCREMENT') {
         this.increment++;
@@ -69,6 +91,33 @@ Brain = (function (){
     };
 
     return IncrementExpr;
+  })();
+
+  var JumpExpr = (function() {
+    var JumpExpr = function(){ };
+    JumpExpr.prototype = Object.create(Expr.prototype);
+    return JumpExpr;
+  })();
+
+  var ShiftExpr = (function() {
+    var ShiftExpr = function(shift) {
+      this.shift = shift;
+    };
+
+    ShiftExpr.prototype = Object.create(Expr.prototype);
+    ShiftExpr.prototype.update_expression = function(update) {
+      if (update === 'TT_SHIFT_RIGHT') {
+        this.shift++;
+        return true;
+      } else if (update === 'TT_SHIFT_LEFT') {
+        this.shift--;
+        return true;
+      }
+
+      return false;
+    };
+
+    return ShiftExpr;
   })();
 
   var IfExpr = (function() {
@@ -241,6 +290,6 @@ Brain = (function (){
   return {
     Parser: Parser,
     Interpreter: Interpreter,
-    Expr: IfExpr
+    Expr: ShiftExpr
   };
 })();
