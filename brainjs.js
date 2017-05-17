@@ -1,6 +1,30 @@
 Brain = (function (){
 /************************ Utils *************************/
 
+/************************ Tokens ***********************/
+
+  var tokens = {
+    '<' : 'TT_SHIFT_LEFT',
+    '>' : 'TT_SHIFT_RIGHT',
+    '^' : 'TT_SHIFT_JUMP',
+    '+' : 'TT_INCREMENT',
+    '-' : 'TT_DECREMENT',
+    '.' : 'TT_OUTPUT',
+    ',' : 'TT_INPUT',
+    '[' : 'TT_BEGIN_WHILE',
+    ']' : 'TT_END_WHILE',
+    '{' : 'TT_BEGIN_FOR',
+    '}' : 'TT_END_FOR',
+    '*' : 'TT_MUL',
+    '/' : 'TT_DIV',
+    '%' : 'TT_REM',
+    '#' : 'TT_DEBUG',
+    '!' : 'TT_BREAK',
+    '?' : 'TT_IF_THEN',
+    ':' : 'TT_IF_ELSE',
+    ';' : 'TT_IF_END',
+    '$' : 'TT_FLOAT'
+  };
 
 /************************ AST *************************/
 
@@ -79,10 +103,10 @@ Brain = (function (){
 
     IncrementExpr.prototype = Object.create(Expr.prototype);
     IncrementExpr.prototype.update_expression = function(update) {
-      if (update === 'TT_INCREMENT') {
+      if (tokens[update] === 'TT_INCREMENT') {
         this.increment++;
         return true;
-      } else if (update === 'TT_DECREMENT') {
+      } else if (tokens[update] === 'TT_DECREMENT') {
         this.increment--;
         return true;
       }
@@ -106,10 +130,10 @@ Brain = (function (){
 
     ShiftExpr.prototype = Object.create(Expr.prototype);
     ShiftExpr.prototype.update_expression = function(update) {
-      if (update === 'TT_SHIFT_RIGHT') {
+      if (tokens[update] === 'TT_SHIFT_RIGHT') {
         this.shift++;
         return true;
-      } else if (update === 'TT_SHIFT_LEFT') {
+      } else if (tokens[update] === 'TT_SHIFT_LEFT') {
         this.shift--;
         return true;
       }
@@ -136,64 +160,58 @@ Brain = (function (){
 /************************ Parser *************************/
   // Class: Parser @arg (String) program code
   //          this.tokenized:  Array of tokens
-  var Parser = function (code) {
-    var tokenized = [],
-        i = 0,
-        ch, token, match_stack, prev;
-    /*var tokens = {
-      '>': 'increment_pointer',
-      '<': 'decrement_pointer',
-      '+': 'increment_data',
-      '-': 'decrement_data',
-      '.': 'output',
-      ',': 'input',
-      '[': 'jump_forward_if_zero',
-      ']': 'jump_backward_if_nonzero'
-    };*/
-    var tokens = {
-      '<' : 'TT_SHIFT_LEFT',
-      '>' : 'TT_SHIFT_RIGHT',
-      '^' : 'TT_SHIFT_JUMP',
-      '+' : 'TT_INCREMENT',
-      '-' : 'TT_DECREMENT',
-      '.' : 'TT_OUTPUT',
-      ',' : 'TT_INPUT',
-      '[' : 'TT_BEGIN_WHILE',
-      ']' : 'TT_END_WHILE',
-      '{' : 'TT_BEGIN_FOR',
-      '}' : 'TT_END_FOR',
-      '*' : 'TT_MUL',
-      '/' : 'TT_DIV',
-      '%' : 'TT_REM',
-      '#' : 'TT_DEBUG',
-      '!' : 'TT_BREAK',
-      '?' : 'TT_IF_THEN',
-      ':' : 'TT_IF_ELSE',
-      ';' : 'TT_IF_END',
-      '$' : 'TT_FLOAT'
+  var Parser = (function () {
+    var Parser = function(code) {
+      this.code = code.split('');
+      this.i = 0;
+      this.tokenized = [];
+      this.parse(this.tokenized, 0);
     };
 
-    match_stack = [];
-    code = code.split('');
-    while (code.length) {
-      ch = code.shift();
-      if (tokens[ch]) {
-        token = new Token(tokens[ch], ch, i);
-        if (ch === '[') {
-          match_stack.push(token);
-        } else if (ch === ']') {
-          prev = match_stack.pop();
-          if (!prev) throw new Error("Mismatched Brackets.");
-          prev.match = token.number;
-          token.match = prev.number;
+    Parser.prototype = {
+      parse : function(exprs, level) {
+        while(c = this.code[this.i++]) {
+          var expr = null;
+
+          if (exprs.length > 0 && exprs[exprs.length-1].update_expression(c)) {
+            continue;
+          }
+
+          switch (tokens[c]) {
+            case 'TT_SHIFT_LEFT':
+              expr = new ShiftExpr(-1);
+              break;
+
+            case 'TT_SHIFT_RIGHT':
+              expr = new ShiftExpr(1);
+              break;
+
+            case 'TT_SHIFT_JUMP':
+              expr = new JumpExpr();
+              break;
+
+            case 'TT_INCREMENT':
+              expr = new IncrementExpr(1);
+              break;
+
+            case 'TT_DECREMENT':
+              expr = new IncrementExpr(-1);
+              break;
+
+            default:
+              // Ignored character
+              continue;
+          }
+
+          if (expr) {
+            exprs.push(expr);
+          }
         }
-        tokenized.push(token);
-        i++;
       }
-      // ignore everything else.
-    }
-    this.tokenized = tokenized;
-  };
+    };
+
+    return Parser;
+  })();
 
 /************************ Interpreter *************************/
   // Interpreter
@@ -290,6 +308,5 @@ Brain = (function (){
   return {
     Parser: Parser,
     Interpreter: Interpreter,
-    Expr: ShiftExpr
   };
 })();
