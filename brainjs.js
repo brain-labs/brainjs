@@ -68,12 +68,14 @@ Brain = (function (){
   })();
 
   var LoopExpr = (function() {
-    var LoopExpr = function(type) {
+    var LoopExpr = function(exprs, type) {
       this.type = 'undefined';
+      this.exprs = null;
 
-      if (type === 'TT_BEGIN_WHILE'
-       || type === 'TT_BEGIN_FOR') {
+      if (tokens[type] === 'TT_BEGIN_WHILE'
+       || tokens[type] === 'TT_BEGIN_FOR') {
         this.type = type;
+	this.exprs = exprs;
       }
     };
 
@@ -85,9 +87,9 @@ Brain = (function (){
     var ArithmeticExpr = function(type) {
       this.type = 'undefined';
 
-      if (type === 'TT_MUL'
-       || type === 'TT_REM'
-       || type === 'TT_DIV') {
+      if (tokens[type] === 'TT_MUL'
+       || tokens[type] === 'TT_REM'
+       || tokens[type] === 'TT_DIV') {
         this.type = type;
       }
     };
@@ -197,6 +199,33 @@ Brain = (function (){
             case 'TT_DECREMENT':
               expr = new IncrementExpr(-1);
               break;
+
+	    case 'TT_OUTPUT':
+	      expr = new OutputExpr();
+	      break;
+
+	    case 'TT_INPUT':
+	      expr = new InputExpr();
+	      break;
+
+	    case 'TT_BEGIN_WHILE':
+	    {
+	      var loop_exprs = [];
+	      var ch = c;
+	      this.parse(loop_exprs, level + 1);
+	      expr = new LoopExpr(loop_exprs, ch);
+	      break;
+	    }
+
+	    case 'TT_END_WHILE':
+	    {
+	      if (level > 0) {
+                // Exit recursivity
+                return;
+	      }
+
+	      break;
+	    }
 
             default:
               // Ignored character
