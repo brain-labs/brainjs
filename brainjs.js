@@ -149,6 +149,7 @@ Brain = (function (){
   var IfExpr = (function() {
     var IfExpr = function(exprs_then) {
       this.exprs_then = exprs_then;
+      this.exprs_else = null;
     };
 
     IfExpr.prototype = Object.create(Expr.prototype);
@@ -167,6 +168,7 @@ Brain = (function (){
       this.code = code.split('');
       this.i = 0;
       this.tokenized = [];
+      this.has_done_then = false;
       this.parse(this.tokenized, 0);
     };
 
@@ -209,6 +211,7 @@ Brain = (function (){
 	      break;
 
 	    case 'TT_BEGIN_WHILE':
+            case 'TT_BEGIN_FOR':
 	    {
 	      var loop_exprs = [];
 	      var ch = c;
@@ -218,6 +221,8 @@ Brain = (function (){
 	    }
 
 	    case 'TT_END_WHILE':
+            case 'TT_END_FOR':
+            case 'TT_IF_END':
 	    {
 	      if (level > 0) {
                 // Exit recursivity
@@ -226,6 +231,57 @@ Brain = (function (){
 
 	      break;
 	    }
+
+            case 'TT_IF_THEN':
+            {
+              var if_exprs = [];
+              this.parse(if_exprs, level + 1);
+              expr = new IfExpr(if_exprs);
+              break;
+            }
+
+            case 'TT_IF_ELSE':
+            {
+              if (!this.has_done_then) {
+                if (level == 0) {
+                  break;
+                }
+
+                this.i--;
+                this.has_done_then = true;
+                return; // exit recursivity
+              }
+
+              if (exprs.length > 0) {
+                var theExpr = exprs[exprs.length-1];
+                if (theExpr instanceof IfExpr) {
+                  var else_exprs = [];
+                  this.parse(else_exprs, level + 1);
+                  theExpr.set_else(else_exprs);
+                }
+              }
+
+              this.has_done_then = false; // reset flag
+              break;
+            }
+
+            case 'TT_MUL':
+            case 'TT_DIV':
+            case 'TT_REM':
+              expr = new ArithmeticExpr(c);
+              break;
+
+            case 'TT_DEBUG':
+              expr = new DebugExpr();
+              break;
+
+            case 'TT_BREAK':
+              expr = new BreakExpr();
+              break;
+
+            case 'TT_FLOAT':
+              expr = new FloatExpr();
+              break;
 
             default:
               // Ignored character
