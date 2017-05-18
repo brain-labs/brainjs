@@ -23,14 +23,14 @@ class self.JSREPLEngine
         result_fn before.concat([ '[' + cells[index] + ']' ]).concat(after).join ' '
 
     @result_handler = @result_fn_factory @result
-    @BFI = new @sandbox.BF.Interpreter input, output, @result_handler
+    @BI = new @sandbox.BF.Interpreter input, output, @result_handler
 
     ready()
 
   Eval: (command) ->
     try
       if command == "SHOWTAPE"
-        @BFI.result = (data,index) =>
+        @BI.result = (data,index) =>
           cells = data.map (x) -> x
           cells.length = if cells.length < index then index + 1 else cells.length
           cells[i] ||= 0 for v,i in cells
@@ -38,13 +38,13 @@ class self.JSREPLEngine
           cells[index] = '[' + cells[index] + ']'
           @result cells.join ' '
 
-        @BFI.evaluate ''
-        @BFI.result = @result_handler
+        @BI.evaluate ''
+        @BI.result = @result_handler
       else if command.match /^RESET\b/
-        @BFI.reset()
-        @BFI.evaluate command.replace /^RESET/, ''
+        @BI.reset()
+        @BI.evaluate command.replace /^RESET/, ''
       else
-        @BFI.evaluate command
+        @BI.evaluate command
 
     catch e
       @error e
@@ -52,11 +52,11 @@ class self.JSREPLEngine
   EvalSync: (command) ->
     #TODO(amasad): Sync with @Eval().
     ret = null
-    @BFI.result = @result_fn_factory (res)->
+    @BI.result = @result_fn_factory (res)->
       ret = res
 
-    @BFI.evaluate command
-    @BFI.result = @result_handler
+    @BI.evaluate command
+    @BI.result = @result_handler
     return ret
 
   GetNextLineIndent: (command) ->
@@ -81,4 +81,3 @@ class self.JSREPLEngine
         return parens_in_last_line
       else
         return 0
-
