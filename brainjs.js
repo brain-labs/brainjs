@@ -1,6 +1,12 @@
 Brain = (function (){
 /************************ Utils *************************/
 
+  var ErrOutOfRange = (function () {
+    var msg = "Data pointer out of range.";
+    if (RangeError) return new RangeError(msg);
+    return new Error(msg);
+  })();
+
 /************************ Tokens ***********************/
 
   var tokens = {
@@ -31,9 +37,10 @@ Brain = (function (){
   var Expr = (function() {
     var Expr = function() {};
     Expr.prototype = {
-      update_expression : function(update) { return false; },
-      value : function() { return this; }
-    }
+      update_expression: function(update) { return false; },
+      value: function() { return this; },
+      code_gen: function(tapeObj, callback) { }
+    };
     return Expr;
   })();
 
@@ -116,6 +123,17 @@ Brain = (function (){
       return false;
     };
 
+    IncrementExpr.prototype.zerofy = function (tapeObj) {
+        if (tapeObj.data[tapeObj.d_ptr] === undefined) {
+           tapeObj.data[tapeObj.d_ptr] = 0;
+        }
+    };
+
+    IncrementExpr.prototype.code_gen = function(tapeObj, callback) {
+      this.zerofy(tapeObj);
+      tapeObj.data[tapeObj.d_ptr] += this.increment;
+    };
+
     return IncrementExpr;
   })();
 
@@ -141,6 +159,14 @@ Brain = (function (){
       }
 
       return false;
+    };
+
+    ShiftExpr.prototype.code_gen = function(tapeObj, callback) {
+      if (tapeObj.d_ptr + this.shift < 0) {
+        throw ErrOutOfRange;
+      }
+
+      tapeObj.d_ptr += this.shift;
     };
 
     return ShiftExpr;
@@ -319,48 +345,22 @@ Brain = (function (){
       },
 
       evaluate: function (code) {
-         this.code = (code instanceof Parser ? code : new Parser(code)).tokenized;
+         this.exprs = (code instanceof Parser ? code : new Parser(code)).tokenized;
          this.i_ptr = 0;
          this.run();
       },
 
       run: function () {
-        var cont = true,
-            instruction, instruction_name;
-            var i =0;
-        while (typeof cont !== "function") {
-          this.instruction = this.code[this.i_ptr];
-          if (!this.instruction) {
-            cont = this.result;
-            continue;
-          }
-          cont = this[this.instruction.type]();
-          this.i_ptr++;
+        var tapeObj = { data: this.data, d_ptr: this.d_ptr };
+        while(expr = this.exprs[this.i_ptr++]) {
+          expr.code_gen(tapeObj, this.zerofy);
         }
-        cont(this.data, this.d_ptr);
+        this.d_ptr = tapeObj.d_ptr;
+        this.result(this.data, this.d_ptr);
       },
 
-      increment_pointer: function () {
-        this.d_ptr++;
-      },
-
-      decrement_pointer: function () {
-        if (this.d_ptr === 0) throw ErrOutOfRange;
-        this.d_ptr--;
-      },
-
-      zerofy: function () {
-        if (this.data[this.d_ptr] === undefined) this.data[this.d_ptr] = 0
-      },
-
-      increment_data: function () {
-        this.zerofy();
-        this.data[this.d_ptr]++;
-      },
-
-      decrement_data: function () {
-        this.zerofy();
-        this.data[this.d_ptr]--;
+      zerofy: function (tapeObj) {
+        if (tapeObj.data[tapeObj.d_ptr] === undefined) tapeObj.data[tapeObj.d_ptr] = 0;
       },
 
       output: function () {
