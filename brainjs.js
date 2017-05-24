@@ -42,7 +42,6 @@ Brain = (function (){
       code_gen: function(tapeObj, callback) { }
     };
 
-    };
     return Expr;
   })();
 
@@ -148,6 +147,7 @@ Brain = (function (){
       }
 
       tapeObj.d_ptr = tapeObj.data[tapeObj.d_ptr];
+      tapeObj.d_ptr = tapeObj.d_ptr || 0;
     };
 
     return JumpExpr;
