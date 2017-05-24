@@ -45,7 +45,12 @@ Brain = (function (){
     Expr.prototype = {
       update_expression: function(update) { return false; },
       value: function() { return this; },
-      exec: function(delegate) { }
+      exec: function(delegate) { },
+      zerofy: function (tapeObj) {
+        if (tapeObj.data[tapeObj.d_ptr] === undefined) {
+          tapeObj.data[tapeObj.d_ptr] = 0;
+        }
+      }
     };
 
     return Expr;
@@ -55,13 +60,10 @@ Brain = (function (){
     var FloatExpr = function(){ };
     FloatExpr.prototype = Object.create(Expr.prototype);
     FloatExpr.prototype.exec = function(delegate) {
-      if (delegate.data[delegate.d_ptr] === undefined ||
-          delegate.data[delegate.d_ptr] === 0) {
-        throw ErrDivisionZero;
-      }
-
+      this.zerofy(delegate);
       delegate.user_output((delegate.data[delegate.d_ptr]/100.0).toFixed(2));
     };
+
     return FloatExpr;
   })();
 
@@ -74,18 +76,39 @@ Brain = (function (){
   var DebugExpr = (function() {
     var DebugExpr = function(){ };
     DebugExpr.prototype = Object.create(Expr.prototype);
+    DebugExpr.prototype.exec = function(delegate) {
+      this.zerofy(delegate);
+      delegate.user_output("Index Pointer: " + delegate.d_ptr +
+                           " Value at Index Pointer: " + delegate.data[delegate.d_ptr]);
+    };
+
     return DebugExpr;
   })();
 
   var InputExpr = (function() {
     var InputExpr = function(){ };
     InputExpr.prototype = Object.create(Expr.prototype);
+    InputExpr.prototype.exec = function(delegate) {
+      var that = delegate;
+      return (function () {
+        that.user_input(function (data) {
+          data = data.toString();
+          that.data[that.d_ptr] = data.charCodeAt(0) || 10;
+          that.run();
+        });
+      });
+    }
+
     return InputExpr;
   })();
 
   var OutputExpr = (function() {
     var OutputExpr = function(){ };
     OutputExpr.prototype = Object.create(Expr.prototype);
+    OutputExpr.prototype.exec = function(delegate) {
+      delegate.user_output(String.fromCharCode(delegate.data[delegate.d_ptr]));
+    };
+
     return OutputExpr;
   })();
 
@@ -137,12 +160,6 @@ Brain = (function (){
 
       return false;
     };
-
-    IncrementExpr.prototype.zerofy = function (tapeObj) {
-        if (tapeObj.data[tapeObj.d_ptr] === undefined) {
-          tapeObj.data[tapeObj.d_ptr] = 0;
-        }
-    }
 
     IncrementExpr.prototype.exec = function(delegate) {
       this.zerofy(delegate);
@@ -376,25 +393,14 @@ Brain = (function (){
 
       run: function () {
         while(expr = this.exprs[this.i_ptr++]) {
-          expr.exec(this);
+          var inputFunction = expr.exec(this);
+          if (expr instanceof InputExpr) {
+            inputFunction(this.data, this.d_ptr);
+            return; // we give the control to the user
+          }
         }
 
         this.result(this.data, this.d_ptr);
-      },
-
-      output: function () {
-        this.user_output(String.fromCharCode(this.data[this.d_ptr]));
-      },
-
-      input: function () {
-        var that = this;
-        return (function () {
-          that.user_input(function (data) {
-            data = data.toString();
-            that.data[that.d_ptr] = data.charCodeAt(0) || 10;
-            that.run();
-          });
-        });
       }
     }
     return Interpreter;
