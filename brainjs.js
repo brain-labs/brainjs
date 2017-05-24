@@ -41,6 +41,8 @@ Brain = (function (){
       value: function() { return this; },
       code_gen: function(tapeObj, callback) { }
     };
+
+    };
     return Expr;
   })();
 
@@ -125,9 +127,9 @@ Brain = (function (){
 
     IncrementExpr.prototype.zerofy = function (tapeObj) {
         if (tapeObj.data[tapeObj.d_ptr] === undefined) {
-           tapeObj.data[tapeObj.d_ptr] = 0;
+          tapeObj.data[tapeObj.d_ptr] = 0;
         }
-    };
+    }
 
     IncrementExpr.prototype.code_gen = function(tapeObj, callback) {
       this.zerofy(tapeObj);
@@ -140,27 +142,12 @@ Brain = (function (){
   var JumpExpr = (function() {
     var JumpExpr = function(){ };
     JumpExpr.prototype = Object.create(Expr.prototype);
-    JumpExpr.prototype.zerofy = function (tapeObj) {
-        if (tapeObj.data[tapeObj.d_ptr] === undefined) {
-           tapeObj.data[tapeObj.d_ptr] = 0;
-        }
-    };
-
     JumpExpr.prototype.code_gen = function(tapeObj, callback) {
       if (tapeObj.data[tapeObj.d_ptr] < 0) {
         throw ErrOutOfRange;
       }
 
-      // aux ptr var
-      var old_d_ptr = tapeObj.d_ptr;
-
-      // zerofy undefined cells
-      for (var i = old_d_ptr + 1; i <= tapeObj.data[old_d_ptr]; i++) {
-        tapeObj.d_ptr = i;
-        this.zerofy(tapeObj);
-      }
-
-      tapeObj.d_ptr = tapeObj.data[old_d_ptr];
+      tapeObj.d_ptr = tapeObj.data[tapeObj.d_ptr];
     };
 
     return JumpExpr;
