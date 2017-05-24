@@ -7,6 +7,12 @@ Brain = (function (){
     return new Error(msg);
   })();
 
+  var ErrDivisionZero = (function () {
+    var msg = "Division by zero is impossible.";
+    if (RangeError) return new RangeError(msg);
+    return new Error(msg);
+  })();
+
 /************************ Tokens ***********************/
 
   var tokens = {
@@ -48,6 +54,14 @@ Brain = (function (){
   var FloatExpr = (function() {
     var FloatExpr = function(){ };
     FloatExpr.prototype = Object.create(Expr.prototype);
+    FloatExpr.prototype.exec = function(delegate) {
+      if (delegate.data[delegate.d_ptr] === undefined ||
+          delegate.data[delegate.d_ptr] === 0) {
+        throw ErrDivisionZero;
+      }
+
+      delegate.user_output((delegate.data[delegate.d_ptr]/100.0).toFixed(2));
+    };
     return FloatExpr;
   })();
 
@@ -381,16 +395,7 @@ Brain = (function (){
             that.run();
           });
         });
-      },
-
-      jump_forward_if_zero: function () {
-        if (!this.data[this.d_ptr])  this.i_ptr = this.instruction.match;
-      },
-
-      jump_backward_if_nonzero: function () {
-        if (this.data[this.d_ptr]) this.i_ptr = this.instruction.match;
       }
-
     }
     return Interpreter;
   })();
