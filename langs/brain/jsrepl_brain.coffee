@@ -23,7 +23,7 @@ class self.JSREPLEngine
         result_fn before.concat([ '[' + cells[index] + ']' ]).concat(after).join ' '
 
     @result_handler = @result_fn_factory @result
-    @BI = new @sandbox.BF.Interpreter input, output, @result_handler
+    @BI = new @sandbox.Brain.Interpreter input, output, @result_handler
 
     ready()
 
