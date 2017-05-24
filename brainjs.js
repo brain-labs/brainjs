@@ -140,6 +140,29 @@ Brain = (function (){
   var JumpExpr = (function() {
     var JumpExpr = function(){ };
     JumpExpr.prototype = Object.create(Expr.prototype);
+    JumpExpr.prototype.zerofy = function (tapeObj) {
+        if (tapeObj.data[tapeObj.d_ptr] === undefined) {
+           tapeObj.data[tapeObj.d_ptr] = 0;
+        }
+    };
+
+    JumpExpr.prototype.code_gen = function(tapeObj, callback) {
+      if (tapeObj.data[tapeObj.d_ptr] < 0) {
+        throw ErrOutOfRange;
+      }
+
+      // aux ptr var
+      var old_d_ptr = tapeObj.d_ptr;
+
+      // zerofy undefined cells
+      for (var i = old_d_ptr + 1; i <= tapeObj.data[old_d_ptr]; i++) {
+        tapeObj.d_ptr = i;
+        this.zerofy(tapeObj);
+      }
+
+      tapeObj.d_ptr = tapeObj.data[old_d_ptr];
+    };
+
     return JumpExpr;
   })();
 
@@ -353,14 +376,10 @@ Brain = (function (){
       run: function () {
         var tapeObj = { data: this.data, d_ptr: this.d_ptr };
         while(expr = this.exprs[this.i_ptr++]) {
-          expr.code_gen(tapeObj, this.zerofy);
+          expr.code_gen(tapeObj, function(){});
         }
         this.d_ptr = tapeObj.d_ptr;
         this.result(this.data, this.d_ptr);
-      },
-
-      zerofy: function (tapeObj) {
-        if (tapeObj.data[tapeObj.d_ptr] === undefined) tapeObj.data[tapeObj.d_ptr] = 0;
       },
 
       output: function () {
