@@ -39,7 +39,7 @@ Brain = (function (){
     Expr.prototype = {
       update_expression: function(update) { return false; },
       value: function() { return this; },
-      code_gen: function(tapeObj, callback) { }
+      exec: function(delegate) { }
     };
 
     return Expr;
@@ -130,9 +130,9 @@ Brain = (function (){
         }
     }
 
-    IncrementExpr.prototype.code_gen = function(tapeObj, callback) {
-      this.zerofy(tapeObj);
-      tapeObj.data[tapeObj.d_ptr] += this.increment;
+    IncrementExpr.prototype.exec = function(delegate) {
+      this.zerofy(delegate);
+      delegate.data[delegate.d_ptr] += this.increment;
     };
 
     return IncrementExpr;
@@ -141,13 +141,13 @@ Brain = (function (){
   var JumpExpr = (function() {
     var JumpExpr = function(){ };
     JumpExpr.prototype = Object.create(Expr.prototype);
-    JumpExpr.prototype.code_gen = function(tapeObj, callback) {
-      if (tapeObj.data[tapeObj.d_ptr] < 0) {
+    JumpExpr.prototype.exec = function(delegate) {
+      if (delegate.data[delegate.d_ptr] < 0) {
         throw ErrOutOfRange;
       }
 
-      tapeObj.d_ptr = tapeObj.data[tapeObj.d_ptr];
-      tapeObj.d_ptr = tapeObj.d_ptr || 0;
+      delegate.d_ptr = delegate.data[delegate.d_ptr];
+      delegate.d_ptr = delegate.d_ptr || 0;
     };
 
     return JumpExpr;
@@ -171,12 +171,12 @@ Brain = (function (){
       return false;
     };
 
-    ShiftExpr.prototype.code_gen = function(tapeObj, callback) {
-      if (tapeObj.d_ptr + this.shift < 0) {
+    ShiftExpr.prototype.exec = function(delegate) {
+      if (delegate.d_ptr + this.shift < 0) {
         throw ErrOutOfRange;
       }
 
-      tapeObj.d_ptr += this.shift;
+      delegate.d_ptr += this.shift;
     };
 
     return ShiftExpr;
@@ -361,11 +361,10 @@ Brain = (function (){
       },
 
       run: function () {
-        var tapeObj = { data: this.data, d_ptr: this.d_ptr };
         while(expr = this.exprs[this.i_ptr++]) {
-          expr.code_gen(tapeObj, function(){});
+          expr.exec(this);
         }
-        this.d_ptr = tapeObj.d_ptr;
+
         this.result(this.data, this.d_ptr);
       },
 
