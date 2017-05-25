@@ -40,10 +40,10 @@ Brain = (function (){
 
 /************************ AST *************************/
 
-  var Expr = (function() {
-    var Expr = function() {};
-    Expr.prototype = {
-      update_expression: function(update) { return false; },
+  var Stmt = (function() {
+    var Stmt = function() {};
+    Stmt.prototype = {
+      update_statement: function(update) { return false; },
       value: function() { return this; },
       exec: function(delegate) { },
       zerofy: function (tapeObj) {
@@ -53,42 +53,42 @@ Brain = (function (){
       }
     };
 
-    return Expr;
+    return Stmt;
   })();
 
-  var FloatExpr = (function() {
-    var FloatExpr = function(){ };
-    FloatExpr.prototype = Object.create(Expr.prototype);
-    FloatExpr.prototype.exec = function(delegate) {
+  var FloatStmt = (function() {
+    var FloatStmt = function(){ };
+    FloatStmt.prototype = Object.create(Stmt.prototype);
+    FloatStmt.prototype.exec = function(delegate) {
       this.zerofy(delegate);
       delegate.user_output((delegate.data[delegate.d_ptr]/100.0).toFixed(2));
     };
 
-    return FloatExpr;
+    return FloatStmt;
   })();
 
-  var BreakExpr = (function() {
-    var BreakExpr = function(){ };
-    BreakExpr.prototype = Object.create(Expr.prototype);
-    return BreakExpr;
+  var BreakStmt = (function() {
+    var BreakStmt = function(){ };
+    BreakStmt.prototype = Object.create(Stmt.prototype);
+    return BreakStmt;
   })();
 
-  var DebugExpr = (function() {
-    var DebugExpr = function(){ };
-    DebugExpr.prototype = Object.create(Expr.prototype);
-    DebugExpr.prototype.exec = function(delegate) {
+  var DebugStmt = (function() {
+    var DebugStmt = function(){ };
+    DebugStmt.prototype = Object.create(Stmt.prototype);
+    DebugStmt.prototype.exec = function(delegate) {
       this.zerofy(delegate);
       delegate.user_output("Index Pointer: " + delegate.d_ptr +
                            " Value at Index Pointer: " + delegate.data[delegate.d_ptr]);
     };
 
-    return DebugExpr;
+    return DebugStmt;
   })();
 
-  var InputExpr = (function() {
-    var InputExpr = function(){ };
-    InputExpr.prototype = Object.create(Expr.prototype);
-    InputExpr.prototype.exec = function(delegate) {
+  var InputStmt = (function() {
+    var InputStmt = function(){ };
+    InputStmt.prototype = Object.create(Stmt.prototype);
+    InputStmt.prototype.exec = function(delegate) {
       var that = delegate;
       return (function () {
         that.user_input(function (data) {
@@ -99,37 +99,37 @@ Brain = (function (){
       });
     }
 
-    return InputExpr;
+    return InputStmt;
   })();
 
-  var OutputExpr = (function() {
-    var OutputExpr = function(){ };
-    OutputExpr.prototype = Object.create(Expr.prototype);
-    OutputExpr.prototype.exec = function(delegate) {
+  var OutputStmt = (function() {
+    var OutputStmt = function(){ };
+    OutputStmt.prototype = Object.create(Stmt.prototype);
+    OutputStmt.prototype.exec = function(delegate) {
       delegate.user_output(String.fromCharCode(delegate.data[delegate.d_ptr]));
     };
 
-    return OutputExpr;
+    return OutputStmt;
   })();
 
-  var LoopExpr = (function() {
-    var LoopExpr = function(exprs, type) {
+  var LoopStmt = (function() {
+    var LoopStmt = function(stmts, type) {
       this.type = 'undefined';
-      this.exprs = null;
+      this.stmts = null;
 
       if (tokens[type] === 'TT_BEGIN_WHILE'
        || tokens[type] === 'TT_BEGIN_FOR') {
         this.type = type;
-	this.exprs = exprs;
+	this.stmts = stmts;
       }
     };
 
-    LoopExpr.prototype = Object.create(Expr.prototype);
-    return LoopExpr;
+    LoopStmt.prototype = Object.create(Stmt.prototype);
+    return LoopStmt;
   })();
 
-  var ArithmeticExpr = (function() {
-    var ArithmeticExpr = function(type) {
+  var ArithmeticStmt = (function() {
+    var ArithmeticStmt = function(type) {
       this.type = 'undefined';
 
       if (tokens[type] === 'TT_MUL'
@@ -139,17 +139,17 @@ Brain = (function (){
       }
     };
 
-    ArithmeticExpr.prototype = Object.create(Expr.prototype);
-    return ArithmeticExpr;
+    ArithmeticStmt.prototype = Object.create(Stmt.prototype);
+    return ArithmeticStmt;
   })();
 
-  var IncrementExpr = (function() {
-    var IncrementExpr = function(increment) {
+  var IncrementStmt = (function() {
+    var IncrementStmt = function(increment) {
       this.increment = increment;
     };
 
-    IncrementExpr.prototype = Object.create(Expr.prototype);
-    IncrementExpr.prototype.update_expression = function(update) {
+    IncrementStmt.prototype = Object.create(Stmt.prototype);
+    IncrementStmt.prototype.update_statement = function(update) {
       if (tokens[update] === 'TT_INCREMENT') {
         this.increment++;
         return true;
@@ -161,18 +161,18 @@ Brain = (function (){
       return false;
     };
 
-    IncrementExpr.prototype.exec = function(delegate) {
+    IncrementStmt.prototype.exec = function(delegate) {
       this.zerofy(delegate);
       delegate.data[delegate.d_ptr] += this.increment;
     };
 
-    return IncrementExpr;
+    return IncrementStmt;
   })();
 
-  var JumpExpr = (function() {
-    var JumpExpr = function(){ };
-    JumpExpr.prototype = Object.create(Expr.prototype);
-    JumpExpr.prototype.exec = function(delegate) {
+  var JumpStmt = (function() {
+    var JumpStmt = function(){ };
+    JumpStmt.prototype = Object.create(Stmt.prototype);
+    JumpStmt.prototype.exec = function(delegate) {
       if (delegate.data[delegate.d_ptr] < 0) {
         throw ErrOutOfRange;
       }
@@ -181,16 +181,16 @@ Brain = (function (){
       delegate.d_ptr = delegate.d_ptr || 0;
     };
 
-    return JumpExpr;
+    return JumpStmt;
   })();
 
-  var ShiftExpr = (function() {
-    var ShiftExpr = function(shift) {
+  var ShiftStmt = (function() {
+    var ShiftStmt = function(shift) {
       this.shift = shift;
     };
 
-    ShiftExpr.prototype = Object.create(Expr.prototype);
-    ShiftExpr.prototype.update_expression = function(update) {
+    ShiftStmt.prototype = Object.create(Stmt.prototype);
+    ShiftStmt.prototype.update_statement = function(update) {
       if (tokens[update] === 'TT_SHIFT_RIGHT') {
         this.shift++;
         return true;
@@ -202,7 +202,7 @@ Brain = (function (){
       return false;
     };
 
-    ShiftExpr.prototype.exec = function(delegate) {
+    ShiftStmt.prototype.exec = function(delegate) {
       if (delegate.d_ptr + this.shift < 0) {
         throw ErrOutOfRange;
       }
@@ -210,21 +210,21 @@ Brain = (function (){
       delegate.d_ptr += this.shift;
     };
 
-    return ShiftExpr;
+    return ShiftStmt;
   })();
 
-  var IfExpr = (function() {
-    var IfExpr = function(exprs_then) {
-      this.exprs_then = exprs_then;
-      this.exprs_else = null;
+  var IfStmt = (function() {
+    var IfStmt = function(stmts_then) {
+      this.stmts_then = stmts_then;
+      this.stmts_else = null;
     };
 
-    IfExpr.prototype = Object.create(Expr.prototype);
-    IfExpr.prototype.set_else = function(exprs_else) {
-      this.exprs_else = exprs_else;
+    IfStmt.prototype = Object.create(Stmt.prototype);
+    IfStmt.prototype.set_else = function(stmts_else) {
+      this.stmts_else = stmts_else;
     };
 
-    return IfExpr;
+    return IfStmt;
   })();
 
 /************************ Parser *************************/
@@ -240,50 +240,50 @@ Brain = (function (){
     };
 
     Parser.prototype = {
-      parse : function(exprs, level) {
+      parse : function(stmts, level) {
         while(c = this.code[this.i++]) {
           var expr = null;
 
-          if (exprs.length > 0 && exprs[exprs.length-1].update_expression(c)) {
+          if (stmts.length > 0 && stmts[stmts.length-1].update_statement(c)) {
             continue;
           }
 
           switch (tokens[c]) {
             case 'TT_SHIFT_LEFT':
-              expr = new ShiftExpr(-1);
+              expr = new ShiftStmt(-1);
               break;
 
             case 'TT_SHIFT_RIGHT':
-              expr = new ShiftExpr(1);
+              expr = new ShiftStmt(1);
               break;
 
             case 'TT_SHIFT_JUMP':
-              expr = new JumpExpr();
+              expr = new JumpStmt();
               break;
 
             case 'TT_INCREMENT':
-              expr = new IncrementExpr(1);
+              expr = new IncrementStmt(1);
               break;
 
             case 'TT_DECREMENT':
-              expr = new IncrementExpr(-1);
+              expr = new IncrementStmt(-1);
               break;
 
 	    case 'TT_OUTPUT':
-	      expr = new OutputExpr();
+	      expr = new OutputStmt();
 	      break;
 
 	    case 'TT_INPUT':
-	      expr = new InputExpr();
+	      expr = new InputStmt();
 	      break;
 
 	    case 'TT_BEGIN_WHILE':
             case 'TT_BEGIN_FOR':
 	    {
-	      var loop_exprs = [];
+	      var loop_stmts = [];
 	      var ch = c;
-	      this.parse(loop_exprs, level + 1);
-	      expr = new LoopExpr(loop_exprs, ch);
+	      this.parse(loop_stmts, level + 1);
+	      expr = new LoopStmt(loop_stmts, ch);
 	      break;
 	    }
 
@@ -301,9 +301,9 @@ Brain = (function (){
 
             case 'TT_IF_THEN':
             {
-              var if_exprs = [];
-              this.parse(if_exprs, level + 1);
-              expr = new IfExpr(if_exprs);
+              var if_stmts = [];
+              this.parse(if_stmts, level + 1);
+              expr = new IfStmt(if_stmts);
               break;
             }
 
@@ -319,12 +319,12 @@ Brain = (function (){
                 return; // exit recursivity
               }
 
-              if (exprs.length > 0) {
-                var theExpr = exprs[exprs.length-1];
-                if (theExpr instanceof IfExpr) {
-                  var else_exprs = [];
-                  this.parse(else_exprs, level + 1);
-                  theExpr.set_else(else_exprs);
+              if (stmts.length > 0) {
+                var theStmt = stmts[stmts.length-1];
+                if (theStmt instanceof IfStmt) {
+                  var else_stmts = [];
+                  this.parse(else_stmts, level + 1);
+                  theStmt.set_else(else_stmts);
                 }
               }
 
@@ -335,19 +335,19 @@ Brain = (function (){
             case 'TT_MUL':
             case 'TT_DIV':
             case 'TT_REM':
-              expr = new ArithmeticExpr(c);
+              expr = new ArithmeticStmt(c);
               break;
 
             case 'TT_DEBUG':
-              expr = new DebugExpr();
+              expr = new DebugStmt();
               break;
 
             case 'TT_BREAK':
-              expr = new BreakExpr();
+              expr = new BreakStmt();
               break;
 
             case 'TT_FLOAT':
-              expr = new FloatExpr();
+              expr = new FloatStmt();
               break;
 
             default:
@@ -356,7 +356,7 @@ Brain = (function (){
           }
 
           if (expr) {
-            exprs.push(expr);
+            stmts.push(expr);
           }
         }
       }
@@ -386,15 +386,15 @@ Brain = (function (){
       },
 
       evaluate: function (code) {
-         this.exprs = (code instanceof Parser ? code : new Parser(code)).tokenized;
+         this.stmts = (code instanceof Parser ? code : new Parser(code)).tokenized;
          this.i_ptr = 0;
          this.run();
       },
 
       run: function () {
-        while(expr = this.exprs[this.i_ptr++]) {
+        while(expr = this.stmts[this.i_ptr++]) {
           var inputFunction = expr.exec(this);
-          if (expr instanceof InputExpr) {
+          if (expr instanceof InputStmt) {
             inputFunction(this.data, this.d_ptr);
             return; // we give the control to the user
           }
