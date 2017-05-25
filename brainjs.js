@@ -242,7 +242,7 @@ Brain = (function (){
     Parser.prototype = {
       parse : function(stmts, level) {
         while(c = this.code[this.i++]) {
-          var expr = null;
+          var stmt = null;
 
           if (stmts.length > 0 && stmts[stmts.length-1].update_statement(c)) {
             continue;
@@ -250,60 +250,60 @@ Brain = (function (){
 
           switch (tokens[c]) {
             case 'TT_SHIFT_LEFT':
-              expr = new ShiftStmt(-1);
+              stmt = new ShiftStmt(-1);
               break;
 
             case 'TT_SHIFT_RIGHT':
-              expr = new ShiftStmt(1);
+              stmt = new ShiftStmt(1);
               break;
 
             case 'TT_SHIFT_JUMP':
-              expr = new JumpStmt();
+              stmt = new JumpStmt();
               break;
 
             case 'TT_INCREMENT':
-              expr = new IncrementStmt(1);
+              stmt = new IncrementStmt(1);
               break;
 
             case 'TT_DECREMENT':
-              expr = new IncrementStmt(-1);
+              stmt = new IncrementStmt(-1);
               break;
 
-	    case 'TT_OUTPUT':
-	      expr = new OutputStmt();
-	      break;
+      	    case 'TT_OUTPUT':
+      	      stmt = new OutputStmt();
+      	      break;
 
-	    case 'TT_INPUT':
-	      expr = new InputStmt();
-	      break;
+      	    case 'TT_INPUT':
+      	      stmt = new InputStmt();
+      	      break;
 
-	    case 'TT_BEGIN_WHILE':
-            case 'TT_BEGIN_FOR':
-	    {
-	      var loop_stmts = [];
-	      var ch = c;
-	      this.parse(loop_stmts, level + 1);
-	      expr = new LoopStmt(loop_stmts, ch);
-	      break;
-	    }
+      	    case 'TT_BEGIN_WHILE':
+                  case 'TT_BEGIN_FOR':
+      	    {
+      	      var loop_stmts = [];
+      	      var ch = c;
+      	      this.parse(loop_stmts, level + 1);
+      	      stmt = new LoopStmt(loop_stmts, ch);
+      	      break;
+      	    }
 
-	    case 'TT_END_WHILE':
+      	    case 'TT_END_WHILE':
             case 'TT_END_FOR':
             case 'TT_IF_END':
-	    {
-	      if (level > 0) {
+      	    {
+      	      if (level > 0) {
                 // Exit recursivity
                 return;
-	      }
+      	      }
 
-	      break;
-	    }
+      	      break;
+      	    }
 
             case 'TT_IF_THEN':
             {
               var if_stmts = [];
               this.parse(if_stmts, level + 1);
-              expr = new IfStmt(if_stmts);
+              stmt = new IfStmt(if_stmts);
               break;
             }
 
@@ -335,19 +335,19 @@ Brain = (function (){
             case 'TT_MUL':
             case 'TT_DIV':
             case 'TT_REM':
-              expr = new ArithmeticStmt(c);
+              stmt = new ArithmeticStmt(c);
               break;
 
             case 'TT_DEBUG':
-              expr = new DebugStmt();
+              stmt = new DebugStmt();
               break;
 
             case 'TT_BREAK':
-              expr = new BreakStmt();
+              stmt = new BreakStmt();
               break;
 
             case 'TT_FLOAT':
-              expr = new FloatStmt();
+              stmt = new FloatStmt();
               break;
 
             default:
@@ -355,8 +355,8 @@ Brain = (function (){
               continue;
           }
 
-          if (expr) {
-            stmts.push(expr);
+          if (stmt) {
+            stmts.push(stmt);
           }
         }
       }
@@ -392,9 +392,9 @@ Brain = (function (){
       },
 
       run: function () {
-        while(expr = this.stmts[this.i_ptr++]) {
-          var inputFunction = expr.exec(this);
-          if (expr instanceof InputStmt) {
+        while(stmt = this.stmts[this.i_ptr++]) {
+          var inputFunction = stmt.exec(this);
+          if (stmt instanceof InputStmt) {
             inputFunction(this.data, this.d_ptr);
             return; // we give the control to the user
           }
