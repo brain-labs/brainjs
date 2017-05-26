@@ -7,7 +7,7 @@ Brain = (function (){
     return new Error(msg);
   })();
 
-  var ErrDivisionZero = (function () {
+  var ErrDivisionByZero = (function () {
     var msg = "Division by zero is impossible.";
     if (RangeError) return new RangeError(msg);
     return new Error(msg);
@@ -140,6 +140,29 @@ Brain = (function (){
     };
 
     ArithmeticStmt.prototype = Object.create(Stmt.prototype);
+    ArithmeticStmt.prototype.exec = function(delegate) {
+      if ((delegate.d_ptr === 0 || delegate.data[delegate.d_ptr-1] === 0) &&
+         (tokens[this.type] === 'TT_DIV' || tokens[this.type] === 'TT_REM')) {
+        throw ErrDivisionByZero;
+      } 
+
+      this.zerofy(delegate);
+      if (delegate.d_ptr === 0 && tokens[this.type] === 'TT_MUL') {
+        delegate.data[delegate.d_ptr] = 0;
+      }
+
+      var curValue = delegate.data[delegate.d_ptr];
+      var predValue = delegate.data[delegate.d_ptr-1];
+
+      if (tokens[this.type] === 'TT_MUL') {
+        delegate.data[delegate.d_ptr] *= predValue;
+      } else if (tokens[this.type] === 'TT_DIV') {
+        delegate.data[delegate.d_ptr] = Math.floor(curValue/predValue);
+      } else if (tokens[this.type] === 'TT_REM') {
+        delegate.data[delegate.d_ptr] %= predValue;
+      }
+    };
+
     return ArithmeticStmt;
   })();
 
