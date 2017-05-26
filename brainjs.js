@@ -116,6 +116,7 @@ Brain = (function (){
     var LoopStmt = function(stmts, type) {
       this.type = 'undefined';
       this.stmts = null;
+      this.counter = 0;
 
       if (tokens[type] === 'TT_BEGIN_WHILE'
        || tokens[type] === 'TT_BEGIN_FOR') {
@@ -125,6 +126,21 @@ Brain = (function (){
     };
 
     LoopStmt.prototype = Object.create(Stmt.prototype);
+    LoopStmt.prototype.exec = function(delegate) {
+      this.zerofy(delegate);
+
+      if (tokens[this.type] === 'TT_BEGIN_WHILE') {
+        while(delegate.data[delegate.d_ptr]) {
+         
+        }
+      } else if (tokens[this.type] === 'TT_BEGIN_FOR') {
+        this.counter = delegate.data[delegate.d_ptr];
+        while (this.counter > 0) {
+
+        }
+      }
+    };
+
     return LoopStmt;
   })();
 
