@@ -139,6 +139,9 @@ Brain = (function (){
             var inputFunction = stmt.exec(delegate);
             if (inputFunction === true) {
               return true;
+            } else if (inputFunction instanceof BreakStmt
+              || stmt instanceof BreakStmt) {
+              return;
             }
 
             this.i_ptr++;
@@ -160,6 +163,9 @@ Brain = (function (){
             var inputFunction = stmt.exec(delegate);
             if (inputFunction === true) {
               return true;
+            } else if (inputFunction instanceof BreakStmt
+              || stmt instanceof BreakStmt) {
+              return;
             } 
             
             this.i_ptr++;
@@ -305,6 +311,10 @@ Brain = (function (){
       }
 
       while(stmt = this.b_ptr[this.i_ptr]) {
+        if (stmt instanceof BreakStmt) {
+          return stmt;
+        }
+
         var inputFunction = stmt.exec(delegate);
         if (inputFunction === true) {
           return true;
@@ -315,7 +325,10 @@ Brain = (function (){
           inputFunction(delegate.data, delegate.d_ptr);
           return true; // we give the control to the user
         }
-      }    
+      }
+
+      this.i_ptr = 0;
+      this.b_ptr = null; // it should keep state otherwise    
     };
 
     return IfStmt;
