@@ -117,6 +117,7 @@ Brain = (function (){
       this.type = 'undefined';
       this.stmts = null;
       this.counter = 0;
+      this.i_ptr = 0;
 
       if (tokens[type] === 'TT_BEGIN_WHILE'
        || tokens[type] === 'TT_BEGIN_FOR') {
@@ -128,10 +129,22 @@ Brain = (function (){
     LoopStmt.prototype = Object.create(Stmt.prototype);
     LoopStmt.prototype.exec = function(delegate) {
       this.zerofy(delegate);
+      if (this.i_ptr >= this.stmts.length) {
+        this.i_ptr = 0;
+      }
 
       if (tokens[this.type] === 'TT_BEGIN_WHILE') {
         while(delegate.data[delegate.d_ptr]) {
-         
+          while(stmt = this.stmts[this.i_ptr]) {
+            var inputFunction = stmt.exec(delegate);
+            this.i_ptr++;
+            if (stmt instanceof InputStmt) {
+              inputFunction(this.data, this.d_ptr);
+              return true; // we give the control to the user
+            }      
+          }
+
+          this.i_ptr = 0;
         }
       } else if (tokens[this.type] === 'TT_BEGIN_FOR') {
         this.counter = delegate.data[delegate.d_ptr];
@@ -431,8 +444,13 @@ Brain = (function (){
       },
 
       run: function () {
-        while(stmt = this.stmts[this.i_ptr++]) {
+        while(stmt = this.stmts[this.i_ptr]) {
           var inputFunction = stmt.exec(this);
+          if (inputFunction === true) {
+            return;
+          }
+
+          this.i_ptr++;
           if (stmt instanceof InputStmt) {
             inputFunction(this.data, this.d_ptr);
             return; // we give the control to the user
