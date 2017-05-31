@@ -137,6 +137,10 @@ Brain = (function (){
         while(delegate.data[delegate.d_ptr]) {
           while(stmt = this.stmts[this.i_ptr]) {
             var inputFunction = stmt.exec(delegate);
+            if (inputFunction === true) {
+              return true;
+            }
+
             this.i_ptr++;
             if (stmt instanceof InputStmt) {
               inputFunction(this.data, this.d_ptr);
@@ -147,9 +151,26 @@ Brain = (function (){
           this.i_ptr = 0;
         }
       } else if (tokens[this.type] === 'TT_BEGIN_FOR') {
-        this.counter = delegate.data[delegate.d_ptr];
-        while (this.counter > 0) {
+        if (!this.counter) {
+          this.counter = delegate.data[delegate.d_ptr];
+        }
 
+        while (this.counter > 0) {
+          while(stmt = this.stmts[this.i_ptr]) {
+            var inputFunction = stmt.exec(delegate);
+            if (inputFunction === true) {
+              return true;
+            } 
+            
+            this.i_ptr++;
+            if (stmt instanceof InputStmt) {
+              inputFunction(this.data, this.d_ptr);
+              return true; // we give the control to the user
+            }      
+          }
+
+          this.i_ptr = 0;
+          this.counter--;
         }
       }
     };
