@@ -143,7 +143,7 @@ Brain = (function (){
 
             this.i_ptr++;
             if (stmt instanceof InputStmt) {
-              inputFunction(this.data, this.d_ptr);
+              inputFunction(delegate.data, delegate.d_ptr);
               return true; // we give the control to the user
             }      
           }
@@ -164,7 +164,7 @@ Brain = (function (){
             
             this.i_ptr++;
             if (stmt instanceof InputStmt) {
-              inputFunction(this.data, this.d_ptr);
+              inputFunction(delegate.data, delegate.d_ptr);
               return true; // we give the control to the user
             }      
           }
@@ -290,11 +290,32 @@ Brain = (function (){
     var IfStmt = function(stmts_then) {
       this.stmts_then = stmts_then;
       this.stmts_else = null;
+      this.i_ptr = 0;
+      this.b_ptr = null;
     };
 
     IfStmt.prototype = Object.create(Stmt.prototype);
     IfStmt.prototype.set_else = function(stmts_else) {
       this.stmts_else = stmts_else;
+    };
+    IfStmt.prototype.exec = function(delegate) {
+      this.zerofy(delegate);
+      if (this.b_ptr === null) {
+        this.b_ptr = delegate.data[delegate.d_ptr] ? this.stmts_then : this.stmts_else;
+      }
+
+      while(stmt = this.b_ptr[this.i_ptr]) {
+        var inputFunction = stmt.exec(delegate);
+        if (inputFunction === true) {
+          return true;
+        }
+
+        this.i_ptr++;
+        if (stmt instanceof InputStmt) {
+          inputFunction(delegate.data, delegate.d_ptr);
+          return true; // we give the control to the user
+        }
+      }    
     };
 
     return IfStmt;
