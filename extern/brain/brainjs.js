@@ -520,6 +520,6 @@ Brain = (function (){
 
   return {
     Parser: Parser,
-    Interpreter: Interpreter,
+    Interpreter: Interpreter
   };
 })();
